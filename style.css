@@ -1,0 +1,165 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #f0f4f8;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #2c3e50;
+    padding: 30px 10px;
+}
+
+.container {
+    max-width: 750px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    background: #ffffff;
+    padding: 30px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 25px;
+}
+
+.logo-area {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+header h1 {
+    font-size: 24px;
+    color: #1a3a5f;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin-bottom: 20px;
+}
+
+.wallet-status {
+    margin-top: 12px;
+    font-family: monospace;
+    font-size: 13px;
+    background: #eef2f7;
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    margin-bottom: 25px;
+    border-top: 5px solid #2980b9;
+}
+
+.admin-panel {
+    border-top-color: #27ae60;
+    background: #f9fbf9;
+}
+
+.panel-desc {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+h2 {
+    font-size: 18px;
+    color: #1a3a5f;
+    margin-bottom: 15px;
+}
+
+.input-with-btn {
+    display: flex;
+    gap: 10px;
+}
+
+input[type="text"] {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-primary { background-color: #2980b9; color: white; }
+.btn-success { background-color: #27ae60; color: white; }
+.btn-info { background-color: #16a085; color: white; }
+.btn-secondary { background-color: #64748b; color: white; padding: 6px 12px; font-size: 12px; }
+
+.status-grid {
+    display: flex;
+    gap: 15px;
+}
+
+.status-box {
+    flex: 1;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid #cbd5e1;
+}
+
+.label { font-size: 12px; color: #64748b; display: block; margin-bottom: 4px; }
+.value { font-family: monospace; font-size: 13px; font-weight: bold; word-break: break-all; }
+.text-warning { color: #d35400; }
+.text-success { color: #27ae60; }
+.text-danger { color: #c0392b; }
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.candidates-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.candidate-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.candidate-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.candidate-name { font-weight: bold; font-size: 16px; }
+.candidate-votes { font-size: 13px; color: #64748b; margin-top: 4px; }
+.vote-badge { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+.loading-text { text-align: center; color: #94a3b8; font-style: italic; padding: 20px 0; }
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 12px;
+    color: #94a3b8;
+}

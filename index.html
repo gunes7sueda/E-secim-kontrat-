@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Seçim & Güvenli Oy Kullanma Paneli</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="text/javascript"></script>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo-area">🗳️</div>
+            <h1>E-Seçim / Güvenli Oy Kullanma Sistemi</h1>
+            <p class="subtitle">Blokzincir Tabanlı Şeffaf ve Manipüle Edilemez Seçim Altyapısı</p>
+            <button id="connectButton" class="btn btn-primary">MetaMask Cüzdanını Bağla</button>
+            <p id="walletAddress" class="wallet-status">Cüzdan Bağlı Değil</p>
+        </header>
+
+        <main>
+            <section class="card status-section">
+                <h2>Seçim Bilgileri</h2>
+                <div class="status-grid">
+                    <div class="status-box">
+                        <span class="label">Seçim Başkanı (Official):</span>
+                        <span id="contractOfficial" class="value">Yükleniyor...</span>
+                    </div>
+                    <div class="status-box">
+                        <span class="label">Oy Kullanma Durumunuz:</span>
+                        <span id="userVoteStatus" class="value text-warning">Kontrol Ediliyor...</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="officialPanel" class="card admin-panel" style="display: none;">
+                <h2>Seçim Başkanı Yönetim Paneli</h2>
+                <p class="panel-desc">Sisteme sadece sizin yetkinizle yeni adaylar tanımlanabilir.</p>
+                <div class="form-group">
+                    <label for="candidateName">Yeni Adayın Adı Soyadı:</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="candidateName" placeholder="Örn: Nafiye Süeda Güneş">
+                        <button id="addCandidateBtn" class="btn btn-success">Adayı Sisteme Kaydet</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card public-panel">
+                <div class="panel-header">
+                    <h2>Aktif Adaylar ve Canlı Sonuçlar</h2>
+                    <button id="refreshListBtn" class="btn btn-secondary">📊 Sonuçları Yenile</button>
+                </div>
+                <div class="candidates-container" id="candidatesContainer">
+                    <p class="loading-text">Lütfen önce MetaMask cüzdanınızı bağlayın...</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>İskenderun Teknik Üniversitesi - Blokzincir Teknolojileri Proje Ödevi</p>
+        </footer>
+    </div>
+
+    <script>
+        const contractAddress = "0xfF8993A41A4dDF778F40f919FaB742cecffb6964";
+        const contractABI = [
+            {"inputs": [{"internalType": "string", "name": "_name", "type": "string"}], "name": "addCandidate", "outputs": [], "stateMutability": "nonpayable", "type": "function"},
+            {"inputs": [], "stateMutability": "nonpayable", "type": "constructor"},
+            {"anonymous": false, "inputs": [{"indexed": true, "internalType": "uint256", "name": "id", "type": "uint256"}, {"indexed": false, "internalType": "string", "name": "name", "type": "string"}], "name": "CandidateAdded", "type": "event"},
+            {"inputs": [{"internalType": "uint256", "name": "_candidateId", "type": "uint256"}], "name": "vote", "outputs": [], "stateMutability": "nonpayable", "type": "function"},
+            {"anonymous": false, "inputs": [{"indexed": true, "internalType": "address", "name": "voter", "type": "address"}, {"indexed": true, "internalType": "uint256", "name": "candidateId", "type": "uint256"}], "name": "VoteCast", "type": "event"},
+            {"inputs": [{"internalType": "uint256", "name": "", "type": "uint256"}], "name": "candidates", "outputs": [{"internalType": "uint256", "name": "id", "type": "uint256"}, {"internalType": "string", "name": "name", "type": "string"}, {"internalType": "uint256", "name": "voteCount", "type": "uint256"}], "stateMutability": "view", "type": "function"},
+            {"inputs": [], "name": "electionOfficial", "outputs": [{"internalType": "address", "name": "", "type": "address"}], "stateMutability": "view", "type": "function"},
+            {"inputs": [], "name": "getAllCandidates", "outputs": [{"components": [{"internalType": "uint256", "name": "id", "type": "uint256"}, {"internalType": "string", "name": "name", "type": "string"}, {"internalType": "uint256", "name": "voteCount", "type": "uint256"}], "internalType": "struct EVoting.Candidate[]", "name": "", "type": "tuple[]"}], "stateMutability": "view", "type": "function"},
+            {"inputs": [{"internalType": "address", "name": "", "type": "address"}], "name": "hasVoted", "outputs": [{"internalType": "bool", "name": "", "type": "bool"}], "stateMutability": "view", "type": "function"}
+        ];
+
+        let provider, signer, votingContract, userAddress;
+
+        const connectButton = document.getElementById("connectButton");
+        const walletAddressText = document.getElementById("walletAddress");
+        const contractOfficialText = document.getElementById("contractOfficial");
+        const userVoteStatusText = document.getElementById("userVoteStatus");
+        const officialPanel = document.getElementById("officialPanel");
+        const candidatesContainer = document.getElementById("candidatesContainer");
+        const addCandidateBtn = document.getElementById("addCandidateBtn");
+        const candidateNameInput = document.getElementById("candidateName");
+        const refreshListBtn = document.getElementById("refreshListBtn");
+
+        async function connectWallet() {
+            if (typeof window.ethereum !== "undefined") {
+                try {
+                    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+                    userAddress = accounts[0];
+                    walletAddressText.innerText = `Bağlı Cüzdan: ${userAddress}`;
+                    connectButton.innerText = "🟢 Cüzdan Bağlandı";
+                    connectButton.disabled = true;
+
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+                    votingContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+                    await loadSystemStatus();
+                    await loadCandidates();
+                } catch (error) {
+                    console.error(error);
+                }
+            } else {
+                alert("MetaMask yüklü değil!");
+            }
+        }
+
+        async function loadSystemStatus() {
+            const official = await votingContract.electionOfficial();
+            contractOfficialText.innerText = official;
+
+            const voted = await votingContract.hasVoted(userAddress);
+            if (voted) {
+                userVoteStatusText.innerText = "Oy Kullandınız ❌";
+                userVoteStatusText.className = "value text-danger";
+            } else {
+                userVoteStatusText.innerText = "Oy Kullanmadınız 🟢";
+                userVoteStatusText.className = "value text-success";
+            }
+
+            if (userAddress.toLowerCase() === official.toLowerCase()) {
+                officialPanel.style.display = "block";
+            } else {
+                officialPanel.style.display = "none";
+            }
+        }
+
+        async function loadCandidates() {
+            candidatesContainer.innerHTML = "<p class='loading-text'>Aday listesi çekiliyor...</p>";
+            const candidateList = await votingContract.getAllCandidates();
+            candidatesContainer.innerHTML = "";
+
+            if (candidateList.length === 0) {
+                candidatesContainer.innerHTML = "<p class='loading-text'>Kayıtlı aday yok.</p>";
+                return;
+            }
+
+            candidateList.forEach(candidate => {
+                const row = document.createElement("div");
+                row.className = "candidate-row";
+                row.innerHTML = `
+                    <div class="candidate-info">
+                        <span class="candidate-name">${candidate.name}</span>
+                        <span class="candidate-votes">Toplam Oy: <span class="vote-badge">${candidate.voteCount.toString()}</span></span>
+                    </div>
+                    <button class="btn btn-info" onclick="castVote(${candidate.id})">🗳️ Oy Ver</button>
+                `;
+                candidatesContainer.appendChild(row);
+            });
+        }
+
+        async function castVote(candidateId) {
+            try {
+                const tx = await votingContract.vote(candidateId);
+                alert("Onay bekleniyor...");
+                await tx.wait();
+                alert("Oyunuz başarıyla blokzincire kaydedildi!");
+                await loadSystemStatus();
+                await loadCandidates();
+            } catch (error) {
+                alert("Hata oluştu veya zaten oy kullandınız.");
+            }
+        }
+
+        async function addNewCandidate() {
+            const name = candidateNameInput.value.trim();
+            if (!name) return;
+            try {
+                const tx = await votingContract.addCandidate(name);
+                alert("Aday ekleniyor, bekleyin...");
+                await tx.wait();
+                alert("Aday başarıyla eklendi!");
+                candidateNameInput.value = "";
+                await loadCandidates();
+            } catch (error) {
+                alert("Yetki hatası.");
+            }
+        }
+
+        connectButton.addEventListener("click", connectWallet);
+        addCandidateBtn.addEventListener("click", addNewCandidate);
+        refreshListBtn.addEventListener("click", async () => {
+            if(votingContract) { await loadSystemStatus(); await loadCandidates(); }
+        });
+    </script>
+</body>
+</html>
